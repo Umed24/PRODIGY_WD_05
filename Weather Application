@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        header {
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2em;
+            color: #333;
+        }
+
+        #weather-form {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        #weather-form input {
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            border-radius: 5px 0 0 5px;
+            outline: none;
+        }
+
+        #weather-form button {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            background: #007BFF;
+            color: #fff;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            outline: none;
+        }
+
+        #weather-form button:hover {
+            background: #0056b3;
+        }
+
+        #weather-data {
+            display: none;
+        }
+
+        .weather-info {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .weather-info h2 {
+            margin: 0;
+            font-size: 1.5em;
+            color: #333;
+        }
+
+        .weather-info p {
+            margin: 5px 0;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .weather-info img {
+            width: 100px;
+            height: 100px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Weather App</h1>
+            <form id="weather-form">
+                <input type="text" id="location-input" placeholder="Enter location" required>
+                <button type="submit">Get Weather</button>
+            </form>
+        </header>
+        <main id="weather-data">
+            <div class="weather-info">
+                <h2 id="location-name"></h2>
+                <p id="temperature"></p>
+                <p id="conditions"></p>
+                <img id="weather-icon" src="" alt="Weather Icon">
+            </div>
+        </main>
+    </div>
+    <script>
+        const weatherForm = document.getElementById('weather-form');
+        const locationInput = document.getElementById('location-input');
+        const weatherDataDiv = document.getElementById('weather-data');
+        const locationName = document.getElementById('location-name');
+        const temperature = document.getElementById('temperature');
+        const conditions = document.getElementById('conditions');
+        const weatherIcon = document.getElementById('weather-icon');
+
+        weatherForm.addEventListener('submit', event => {
+            event.preventDefault();
+            const location = locationInput.value.trim();
+            if (location) {
+                fetchCoordinates(location);
+            }
+        });
+
+        function fetchCoordinates(location) {
+            fetch(`https://nominatim.openstreetmap.org/search?q=${location}&format=json&limit=1`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        const lat = data[0].lat;
+                        const lon = data[0].lon;
+                        fetchWeather(lat, lon, location);
+                    } else {
+                        alert('Location not found. Please try again.');
+                    }
+                })
+                .catch(error => console.error('Error fetching coordinates:', error));
+        }
+
+        function fetchWeather(lat, lon, location) {
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.current_weather) {
+                        displayWeather(data.current_weather, location);
+                    } else {
+                        alert('Unable to fetch weather data.');
+                    }
+                })
+                .catch(error => console.error('Error fetching weather data:', error));
+        }
+
+        function displayWeather(data, location) {
+            locationName.textContent = location;
+            temperature.textContent = `Temperature: ${data.temperature}°C`;
+            conditions.textContent = `Conditions: ${data.weathercode}`;
+            weatherIcon.src = getWeatherIcon(data.weathercode);
+            weatherDataDiv.style.display = 'block';
+        }
+
+        function getWeatherIcon(weatherCode) {
+            const iconMap = {
+                0: 'https://openweathermap.org/img/wn/01d.png',
+                1: 'https://openweathermap.org/img/wn/02d.png',
+                2: 'https://openweathermap.org/img/wn/03d.png',
+                3: 'https://openweathermap.org/img/wn/04d.png',
+                45: 'https://openweathermap.org/img/wn/50d.png',
+                48: 'https://openweathermap.org/img/wn/50d.png',
+                51: 'https://openweathermap.org/img/wn/09d.png',
+                53: 'https://openweathermap.org/img/wn/09d.png',
+                55: 'https://openweathermap.org/img/wn/09d.png',
+                56: 'https://openweathermap.org/img/wn/13d.png',
+                57: 'https://openweathermap.org/img/wn/13d.png',
+                61: 'https://openweathermap.org/img/wn/10d.png',
+                63: 'https://openweathermap.org/img/wn/10d.png',
+                65: 'https://openweathermap.org/img/wn/10d.png',
+                66: 'https://openweathermap.org/img/wn/13d.png',
+                67: 'https://openweathermap.org/img/wn/13d.png',
+                71: 'https://openweathermap.org/img/wn/13d.png',
+                73: 'https://openweathermap.org/img/wn/13d.png',
+                75: 'https://openweathermap.org/img/wn/13d.png',
+                77: 'https://openweathermap.org/img/wn/13d.png',
+                80: 'https://openweathermap.org/img/wn/09d.png',
+                81: 'https://openweathermap.org/img/wn/09d.png',
+                82: 'https://openweathermap.org/img/wn/09d.png',
+                85: 'https://openweathermap.org/img/wn/13d.png',
+                86: 'https://openweathermap.org/img/wn/13d.png',
+                95: 'https://openweathermap.org/img/wn/11d.png',
+                96: 'https://openweathermap.org/img/wn/11d.png',
+                99: 'https://openweathermap.org/img/wn/11d.png'
+            };
+            return iconMap[weatherCode] || 'https://openweathermap.org/img/wn/01d.png';
+        }
+
+        // Get weather data based on user's current location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                fetchWeather(lat, lon, 'your location');
+            });
+        }
+    </script>
+</body>
+</html>
